@@ -1,0 +1,592 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #001f3f 0%, #003366 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    /* 移动端优化 */
+    position: fixed;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+}
+
+#gameContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+#gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, #87CEEB 0%, #4682B4 50%, #1E3A5F 100%);
+    cursor: crosshair;
+}
+
+/* 开始界面 */
+#startScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 20, 40, 0.95);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+#startScreen h1 {
+    font-size: 4em;
+    margin-bottom: 20px;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.game-btn {
+    padding: 20px 50px;
+    font-size: 1.5em;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    margin-top: 30px;
+}
+
+.game-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+
+.game-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.loading {
+    margin: 30px 0;
+    text-align: center;
+}
+
+.loading p {
+    font-size: 1.3em;
+    margin-bottom: 20px;
+    color: #FFD700;
+}
+
+.loading-bar {
+    width: 400px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    overflow: hidden;
+    margin: 0 auto;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+#loadingProgress {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 50%, #CDDC39 100%);
+    border-radius: 15px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.8);
+}
+
+.instructions {
+    margin-top: 40px;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 600px;
+}
+
+.instructions h3 {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+    color: #FFD700;
+}
+
+.instructions h4 {
+    font-size: 1.3em;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #FFA500;
+}
+
+.instructions ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.instructions li {
+    padding: 8px 0;
+    font-size: 1.1em;
+}
+
+.instructions li:before {
+    content: "▶ ";
+    color: #FFD700;
+}
+
+.instructions p {
+    font-size: 1em;
+    line-height: 1.6;
+    color: #E0E0E0;
+}
+
+/* 游戏UI */
+#gameUI {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#topBar {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    pointer-events: auto;
+}
+
+#scoreDisplay, #timerDisplay, #comboDisplay {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 10px;
+    font-size: 1.5em;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+#scoreDisplay {
+    color: #FFD700;
+}
+
+#timerDisplay {
+    color: #4CAF50;
+}
+
+#comboDisplay {
+    color: #FF6B6B;
+    animation: comboGlow 0.5s infinite alternate;
+}
+
+@keyframes comboGlow {
+    from { box-shadow: 0 4px 10px rgba(255, 107, 107, 0.5); }
+    to { box-shadow: 0 4px 20px rgba(255, 107, 107, 1); }
+}
+
+#controls {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    pointer-events: auto;
+}
+
+.control-btn {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+#reloadIndicator {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px 20px;
+    border-radius: 20px;
+    min-width: 200px;
+    text-align: center;
+}
+
+#reloadBar {
+    height: 8px;
+    background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.1s linear;
+    margin-bottom: 5px;
+}
+
+#reloadText {
+    color: white;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+/* 游戏结束界面 */
+#gameOverScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    color: white;
+}
+
+#gameOverScreen.hidden {
+    display: none;
+}
+
+#gameOverScreen h1 {
+    font-size: 4em;
+    margin-bottom: 30px;
+    animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#finalScore {
+    font-size: 3em;
+    color: #FFD700;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    animation: scoreReveal 0.8s ease-out 0.3s both;
+}
+
+@keyframes scoreReveal {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#statistics {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 30px 50px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    animation: fadeIn 1s ease-out 0.5s both;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+#statistics p {
+    font-size: 1.5em;
+    margin: 15px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+#statistics span {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 响应式设计 */
+
+/* 平板设备 (768px - 1024px) */
+@media (max-width: 1024px) {
+    #startScreen h1 {
+        font-size: 3em;
+    }
+    
+    .instructions {
+        max-width: 500px;
+    }
+    
+    #topBar {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+}
+
+/* 手机设备 (最大768px) */
+@media (max-width: 768px) {
+    body {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+    
+    #startScreen h1 {
+        font-size: 2.2em;
+        margin-bottom: 15px;
+    }
+    
+    #startScreen p {
+        font-size: 1em;
+    }
+    
+    .game-btn {
+        padding: 15px 40px;
+        font-size: 1.2em;
+        margin-top: 20px;
+    }
+    
+    .instructions {
+        padding: 15px;
+        font-size: 0.85em;
+        margin-top: 20px;
+    }
+    
+    .instructions h3 {
+        font-size: 1.3em;
+    }
+    
+    .instructions h4 {
+        font-size: 1.1em;
+        margin-top: 15px;
+    }
+    
+    .instructions li {
+        font-size: 0.95em;
+        padding: 5px 0;
+    }
+    
+    .instructions p {
+        font-size: 0.9em;
+    }
+    
+    #topBar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px;
+        justify-content: space-around;
+    }
+    
+    #scoreDisplay, #timerDisplay, #comboDisplay {
+        font-size: 0.9em;
+        padding: 8px 12px;
+        flex: 1;
+        min-width: 80px;
+        text-align: center;
+    }
+    
+    #controls {
+        bottom: 20px;
+        gap: 10px;
+    }
+    
+    .control-btn {
+        padding: 12px 25px;
+        font-size: 1em;
+        touch-action: manipulation;
+    }
+    
+    #reloadIndicator {
+        min-width: 180px;
+        padding: 8px 15px;
+    }
+    
+    #reloadBar {
+        height: 6px;
+    }
+    
+    #reloadText {
+        font-size: 0.85em;
+    }
+    
+    #gameOverScreen h1 {
+        font-size: 2.5em;
+        margin-bottom: 20px;
+    }
+    
+    #finalScore {
+        font-size: 2em;
+        margin-bottom: 20px;
+    }
+    
+    #statistics {
+        padding: 20px 30px;
+        margin-bottom: 20px;
+    }
+    
+    #statistics p {
+        font-size: 1.1em;
+        margin: 10px 0;
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+    }
+    
+    .loading-bar {
+        width: 300px;
+    }
+}
+
+/* 小屏手机 (最大480px) */
+@media (max-width: 480px) {
+    #startScreen h1 {
+        font-size: 1.8em;
+    }
+    
+    .game-btn {
+        padding: 12px 30px;
+        font-size: 1em;
+    }
+    
+    .instructions {
+        padding: 12px;
+        font-size: 0.8em;
+    }
+    
+    .instructions h3 {
+        font-size: 1.1em;
+    }
+    
+    .instructions h4 {
+        font-size: 1em;
+    }
+    
+    #topBar {
+        padding: 8px;
+        gap: 5px;
+    }
+    
+    #scoreDisplay, #timerDisplay, #comboDisplay {
+        font-size: 0.8em;
+        padding: 6px 10px;
+        min-width: 70px;
+    }
+    
+    .control-btn {
+        padding: 10px 20px;
+        font-size: 0.9em;
+    }
+    
+    #reloadIndicator {
+        min-width: 150px;
+        padding: 6px 12px;
+    }
+    
+    #gameOverScreen h1 {
+        font-size: 2em;
+    }
+    
+    #finalScore {
+        font-size: 1.5em;
+    }
+    
+    #statistics {
+        padding: 15px 20px;
+    }
+    
+    #statistics p {
+        font-size: 1em;
+    }
+    
+    .loading-bar {
+        width: 250px;
+        height: 25px;
+    }
+}
+
+/* 横屏模式优化 */
+@media (max-height: 600px) and (orientation: landscape) {
+    #startScreen h1 {
+        font-size: 2em;
+        margin-bottom: 10px;
+    }
+    
+    .instructions {
+        max-height: 250px;
+        overflow-y: auto;
+        padding: 10px;
+    }
+    
+    .game-btn {
+        padding: 10px 30px;
+        margin-top: 10px;
+    }
+    
+    #topBar {
+        padding: 5px;
+    }
+    
+    #scoreDisplay, #timerDisplay, #comboDisplay {
+        padding: 5px 10px;
+        font-size: 0.85em;
+    }
+    
+    #controls {
+        bottom: 10px;
+    }
+}
+
+/* 移动设备特定样式 */
+.mobile-device #gameCanvas {
+    cursor: default;
+}
+
+.mobile-device .control-btn {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-device .game-btn {
+    -webkit-tap-highlight-color: transparent;
+}
+

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#001f3f">
+    <title>海战射击游戏</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- 游戏开始界面 -->
+        <div id="startScreen">
+            <h1>🎯 海战射击游戏</h1>
+            <p>击沉敌方舰艇和潜艇！</p>
+            <div id="loadingIndicator" class="loading">
+                <p>正在加载游戏素材...</p>
+                <div class="loading-bar">
+                    <div id="loadingProgress"></div>
+                </div>
+            </div>
+            <button id="startBtn" class="game-btn" style="display:none;">开始游戏</button>
+            <div class="instructions">
+                <h3>游戏说明：</h3>
+                <ul>
+                    <li>点击/触摸屏幕发射导弹</li>
+                    <li>每1秒可发射一发</li>
+                    <li>游戏时间：2分钟</li>
+                    <li>切换海面/海底场景</li>
+                    <li>支持手机和平板</li>
+                </ul>
+                <h4>海面目标：</h4>
+                <p>驱逐舰(2发/20分) 护卫舰(2发/40分) 航母(3发/60分)</p>
+                <h4>海底目标：</h4>
+                <p>小潜艇(1发/20分) 中潜艇(2发/40分) 大潜艇(3发/60分)</p>
+            </div>
+        </div>
+
+        <!-- 游戏主界面 -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- 游戏UI -->
+        <div id="gameUI">
+            <div id="topBar">
+                <div id="scoreDisplay">得分: <span id="score">0</span></div>
+                <div id="timerDisplay">时间: <span id="timer">120</span>秒</div>
+                <div id="comboDisplay">连击: <span id="combo">0</span></div>
+            </div>
+            
+            <div id="controls">
+                <button id="sceneToggle" class="control-btn">切换到海底 🌊</button>
+                <div id="reloadIndicator">
+                    <div id="reloadBar"></div>
+                    <span id="reloadText">准备发射</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏结束界面 -->
+        <div id="gameOverScreen" class="hidden">
+            <h1>🎮 游戏结束</h1>
+            <div id="finalScore">最终得分: <span>0</span></div>
+            <div id="statistics">
+                <p>击沉数量: <span id="totalKills">0</span></p>
+                <p>最高连击: <span id="maxCombo">0</span></p>
+                <p>命中率: <span id="accuracy">0</span>%</p>
+            </div>
+            <button id="restartBtn" class="game-btn">再玩一次</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
+
