@@ -2,77 +2,787 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#001f3f">
-    <title>海战射击游戏</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patsnap Open API 样板间</title>
+    <!-- 引入 JSEncrypt 加密库 -->
+    <script src="https://unpkg.com/jsencrypt@latest/bin/jsencrypt.min.js"></script>
+    <!-- Agent SDK 将动态加载 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+                'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #333;
+        }
+
+        .header .language {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .mode-selector {
+            background: #f8f8f8;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .mode-selector label {
+            margin: 0 30px;
+            font-size: 16px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .mode-selector input[type="radio"] {
+            margin-right: 8px;
+        }
+
+        .mode-selector input[type="radio"]:checked + span {
+            color: #6366F1;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: linear-gradient(to right, #6366F1 0%, #6366F1 100%);
+            margin-bottom: 40px;
+            border-radius: 2px;
+        }
+
+        .sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .agent-btn {
+            background: linear-gradient(135deg, #7C7FE7 0%, #6366F1 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+        }
+
+        .agent-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .agent-btn:active {
+            transform: translateY(0);
+        }
+
+        .agent-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .iframe-container {
+            display: none;
+            margin-top: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 800px;
+        }
+
+        .iframe-container.active {
+            display: block;
+        }
+
+        #agent-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .config-section {
+            background: #fff9e6;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .config-section h3 {
+            font-size: 16px;
+            color: #f57c00;
+            margin-bottom: 15px;
+        }
+
+        .config-section input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .config-section select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .env-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .env-indicator.production {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .env-indicator.stage {
+            background-color: #ff9800;
+            color: white;
+        }
+
+        .status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.success {
+            background: #4caf50;
+        }
+
+        .status.error {
+            background: #f44336;
+        }
+
+        @media (max-width: 768px) {
+            .sections {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div id="gameContainer">
-        <!-- 游戏开始界面 -->
-        <div id="startScreen">
-            <h1>🎯 海战射击游戏</h1>
-            <p>击沉敌方舰艇和潜艇！</p>
-            <div id="loadingIndicator" class="loading">
-                <p>正在加载游戏素材...</p>
-                <div class="loading-bar">
-                    <div id="loadingProgress"></div>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1 style="display: inline-block;">Patsnap Open API 样板间</h1>
+                <span id="env-indicator" class="env-indicator production">线上环境</span>
+            </div>
+            <div class="language">🌐 中文</div>
+        </div>
+
+        <!-- 配置区域 -->
+        <div class="config-section">
+            <h3>⚙️ SDK 配置（请替换为您的实际配置）</h3>
+            <select id="config-environment">
+                <option value="production">线上环境 (Production)</option>
+                <option value="stage">测试环境 (Stage)</option>
+            </select>
+            <input type="email" id="config-email" placeholder="用户邮箱 (OA 系统中当前登录用户的邮箱)" value="user@yourcompany.com">
+            <input type="text" id="config-companyId" placeholder="公司 ID (智慧芽提供)" value="your-company-id">
+            <input type="text" id="config-publicKey" placeholder="公钥 (智慧芽提供)" value="YOUR_PUBLIC_KEY">
+        </div>
+
+        <!-- 模式选择 -->
+        <div class="mode-selector">
+            <label>
+                <input type="radio" name="mode" value="newtab" checked>
+                <span>SSO Window(新窗口)</span>
+            </label>
+            <label>
+                <input type="radio" name="mode" value="iframe">
+                <span>SSO Window(iframe嵌入)</span>
+            </label>
+        </div>
+
+        <div class="progress-bar"></div>
+
+        <!-- Agent 功能分类 -->
+        <div class="sections">
+            <!-- 研发创新 -->
+            <div class="section">
+                <h2>研发创新</h2>
+                <div class="buttons">
+                    <button class="agent-btn" data-agent="RESEARCH">技术预研报告</button>
+                    <button class="agent-btn" data-agent="TECHNICAL_QA">技术问答</button>
+                    <button class="agent-btn" data-agent="FIND_SOLUTION">技术方案探索</button>
+                    <button class="agent-btn" data-agent="AIR_AI_AGENT">可行性分析助手</button>
+                    <button class="agent-btn" data-agent="NOVELTY_CHECK">技术想法查新</button>
                 </div>
             </div>
-            <button id="startBtn" class="game-btn" style="display:none;">开始游戏</button>
-            <div class="instructions">
-                <h3>游戏说明：</h3>
-                <ul>
-                    <li>点击/触摸屏幕发射导弹</li>
-                    <li>每1秒可发射一发</li>
-                    <li>游戏时间：2分钟</li>
-                    <li>切换海面/海底场景</li>
-                    <li>支持手机和平板</li>
-                </ul>
-                <h4>海面目标：</h4>
-                <p>驱逐舰(2发/20分) 护卫舰(2发/40分) 航母(3发/60分)</p>
-                <h4>海底目标：</h4>
-                <p>小潜艇(1发/20分) 中潜艇(2发/40分) 大潜艇(3发/60分)</p>
+
+            <!-- 知识产权 -->
+            <div class="section">
+                <h2>知识产权</h2>
+                <div class="buttons">
+                    <button class="agent-btn" data-agent="NOVELTY_SEARCH">查新检索</button>
+                    <button class="agent-btn" data-agent="PATENT_DISCLOSURE">交底书撰写</button>
+                    <button class="agent-btn" data-agent="SEMANTIC_SEARCH">语义检索</button>
+                    <button class="agent-btn" data-agent="AI_SPECIFICATION">专利说明书撰写</button>
+                    <button class="agent-btn" data-agent="IMAGE_FTO_SEARCH">外观防侵权检索</button>
+                    <button class="agent-btn" data-agent="FTO_PRO">防侵权检索</button>
+                </div>
+            </div>
+
+            <!-- 生物医药 -->
+            <div class="section">
+                <h2>生物医药</h2>
+                <div class="buttons">
+                    <button class="agent-btn" data-agent="LS_PIA">生物医药百科问答</button>
+                    <button class="agent-btn" data-agent="LS_PCIE">药物知产报告</button>
+                </div>
+            </div>
+
+            <!-- 新材料 -->
+            <div class="section">
+                <h2>新材料</h2>
+                <div class="buttons">
+                    <button class="agent-btn" data-agent="MATERIAL_TECHNICAL_QA">材料技术问答</button>
+                    <button class="agent-btn" data-agent="MATERIAL_STRUCTURE_SEARCH">材料结构式检索</button>
+                    <button class="agent-btn" data-agent="MATERIAL_SMART_SEARCH">材料智能检索</button>
+                    <button class="agent-btn" data-agent="MATERIAL_SUBSTANCE_EXPLORATION">材料物质探究</button>
+                </div>
             </div>
         </div>
 
-        <!-- 游戏主界面 -->
-        <canvas id="gameCanvas"></canvas>
-
-        <!-- 游戏UI -->
-        <div id="gameUI">
-            <div id="topBar">
-                <div id="scoreDisplay">得分: <span id="score">0</span></div>
-                <div id="timerDisplay">时间: <span id="timer">120</span>秒</div>
-                <div id="comboDisplay">连击: <span id="combo">0</span></div>
-            </div>
-            
-            <div id="controls">
-                <button id="sceneToggle" class="control-btn">切换到海底 🌊</button>
-                <div id="reloadIndicator">
-                    <div id="reloadBar"></div>
-                    <span id="reloadText">准备发射</span>
+        <!-- 共享服务 -->
+        <div class="sections" style="margin-top: 40px;">
+            <div class="section">
+                <h2>共享服务</h2>
+                <div class="buttons">
+                    <button class="agent-btn" data-agent="HISTORY">历史记录</button>
                 </div>
             </div>
+            <div class="section"></div>
         </div>
 
-        <!-- 游戏结束界面 -->
-        <div id="gameOverScreen" class="hidden">
-            <h1>🎮 游戏结束</h1>
-            <div id="finalScore">最终得分: <span>0</span></div>
-            <div id="statistics">
-                <p>击沉数量: <span id="totalKills">0</span></p>
-                <p>最高连击: <span id="maxCombo">0</span></p>
-                <p>命中率: <span id="accuracy">0</span>%</p>
-            </div>
-            <button id="restartBtn" class="game-btn">再玩一次</button>
+        <!-- iframe 容器 -->
+        <div id="iframe-container" class="iframe-container">
+            <iframe id="agent-iframe"></iframe>
         </div>
     </div>
 
-    <script src="game.js"></script>
+    <!-- 状态提示 -->
+    <div id="status" class="status"></div>
+
+    <script>
+        // SDK 环境配置
+        const SDK_URLS = {
+            production: 'https://openapi-embed.zhihuiya.com/agent-sdk/agent-sdk.umd.js',
+            stage: 'https://stage-openapi-embed.zhihuiya.com/agent-sdk/agent-sdk.umd.js'
+        };
+
+        // SDK 加载状态
+        let sdkLoaded = false;
+        let currentEnvironment = 'production';
+
+        // SDK 实例
+        let agentNewTab = null;
+        let agentIframe = null;
+
+        /**
+         * 动态加载 SDK
+         * @param {string} environment - 环境名称 ('production' 或 'stage')
+         * @returns {Promise<void>}
+         */
+        function loadSDK(environment) {
+            return new Promise((resolve, reject) => {
+                // 如果已经加载了SDK，先移除旧的
+                const existingScript = document.querySelector('script[data-agent-sdk]');
+                if (existingScript) {
+                    existingScript.remove();
+                    sdkLoaded = false;
+                    // 清空 SDK 实例
+                    agentNewTab = null;
+                    agentIframe = null;
+                    // 清空全局变量
+                    if (window.PatsnapAgentSDK) {
+                        delete window.PatsnapAgentSDK;
+                    }
+                }
+
+                const script = document.createElement('script');
+                script.src = SDK_URLS[environment];
+                script.setAttribute('data-agent-sdk', 'true');
+                
+                script.onload = () => {
+                    console.log(`[SDK] ${environment} 环境 SDK 加载成功`);
+                    sdkLoaded = true;
+                    currentEnvironment = environment;
+                    updateEnvIndicator(environment);
+                    resolve();
+                };
+
+                script.onerror = () => {
+                    console.error(`[SDK] ${environment} 环境 SDK 加载失败`);
+                    sdkLoaded = false;
+                    reject(new Error(`加载 ${environment} 环境 SDK 失败`));
+                };
+
+                document.head.appendChild(script);
+            });
+        }
+
+        /**
+         * 更新环境指示器
+         * @param {string} environment - 环境名称
+         */
+        function updateEnvIndicator(environment) {
+            const indicator = document.getElementById('env-indicator');
+            if (environment === 'production') {
+                indicator.textContent = '线上环境';
+                indicator.className = 'env-indicator production';
+            } else {
+                indicator.textContent = '测试环境';
+                indicator.className = 'env-indicator stage';
+            }
+        }
+
+        // 清理浏览器缓存和存储
+        async function clearBrowserCache() {
+            try {
+                console.log('=== 开始清理浏览器缓存 ===');
+                
+                // 1. 清理 localStorage
+                try {
+                    localStorage.clear();
+                    console.log('✓ localStorage 已清理');
+                } catch (e) {
+                    console.warn('✗ localStorage 清理失败:', e);
+                }
+
+                // 2. 清理 sessionStorage
+                try {
+                    sessionStorage.clear();
+                    console.log('✓ sessionStorage 已清理');
+                } catch (e) {
+                    console.warn('✗ sessionStorage 清理失败:', e);
+                }
+
+                // 3. 清理所有 cookie
+                try {
+                    const cookies = document.cookie.split(";");
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i];
+                        const eqPos = cookie.indexOf("=");
+                        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+                        
+                        // 删除 cookie（多种路径和域名组合以确保完全清除）
+                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=." + window.location.hostname;
+                        
+                        // 尝试清理智慧芽相关域名的 cookie
+                        const zhihuyiaDomains = ['.zhihuiya.com', 'zhihuiya.com'];
+                        zhihuyiaDomains.forEach(domain => {
+                            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + domain;
+                        });
+                    }
+                    console.log('✓ Cookies 已清理');
+                } catch (e) {
+                    console.warn('✗ Cookies 清理失败:', e);
+                }
+
+                // 4. 清理 IndexedDB
+                if (window.indexedDB) {
+                    try {
+                        if (window.indexedDB.databases) {
+                            const dbs = await window.indexedDB.databases();
+                            for (const db of dbs) {
+                                await new Promise((resolve, reject) => {
+                                    const request = window.indexedDB.deleteDatabase(db.name);
+                                    request.onsuccess = () => {
+                                        console.log('✓ IndexedDB 已清理:', db.name);
+                                        resolve();
+                                    };
+                                    request.onerror = () => {
+                                        console.warn('✗ IndexedDB 清理失败:', db.name);
+                                        resolve(); // 继续执行，不阻塞
+                                    };
+                                    request.onblocked = () => {
+                                        console.warn('⚠ IndexedDB 被阻塞:', db.name);
+                                        resolve();
+                                    };
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('✗ IndexedDB 清理失败:', e);
+                    }
+                }
+
+                // 5. 清理 Cache API (Service Worker Caches)
+                if ('caches' in window) {
+                    try {
+                        const cacheNames = await caches.keys();
+                        await Promise.all(
+                            cacheNames.map(async (cacheName) => {
+                                const deleted = await caches.delete(cacheName);
+                                if (deleted) {
+                                    console.log('✓ Cache API 已清理:', cacheName);
+                                }
+                            })
+                        );
+                        if (cacheNames.length === 0) {
+                            console.log('✓ Cache API 无缓存需要清理');
+                        }
+                    } catch (e) {
+                        console.warn('✗ Cache API 清理失败:', e);
+                    }
+                }
+
+                // 6. 注销所有 Service Workers
+                if ('serviceWorker' in navigator) {
+                    try {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        await Promise.all(
+                            registrations.map(async (registration) => {
+                                const unregistered = await registration.unregister();
+                                if (unregistered) {
+                                    console.log('✓ Service Worker 已注销:', registration.scope);
+                                }
+                            })
+                        );
+                        if (registrations.length === 0) {
+                            console.log('✓ 无 Service Worker 需要注销');
+                        }
+                    } catch (e) {
+                        console.warn('✗ Service Worker 注销失败:', e);
+                    }
+                }
+
+                // 7. 清理 Application Cache (已废弃，但某些旧系统可能还在使用)
+                if (window.applicationCache) {
+                    try {
+                        // 尝试清理 Application Cache
+                        // 注意：Application Cache 已废弃，大部分现代浏览器已移除
+                        console.log('⚠ Application Cache API 已废弃');
+                    } catch (e) {
+                        console.warn('✗ Application Cache 清理失败:', e);
+                    }
+                }
+
+                // 8. 清理 WebSQL (已废弃，但某些旧系统可能还在使用)
+                if (window.openDatabase) {
+                    try {
+                        console.log('⚠ WebSQL 已废弃，建议迁移到 IndexedDB');
+                    } catch (e) {
+                        console.warn('✗ WebSQL 清理失败:', e);
+                    }
+                }
+
+                // 9. 清理 BroadcastChannel (如果有的话)
+                // BroadcastChannel 没有直接的清理 API，但关闭所有通道
+                console.log('✓ BroadcastChannel 会在页面关闭时自动清理');
+
+                // 10. 清理 Shared Workers 和 Dedicated Workers
+                // Workers 在页面关闭时会自动终止
+                console.log('✓ Workers 会在页面关闭时自动清理');
+
+                console.log('=== 浏览器缓存清理完成 ===');
+                showStatus('所有缓存已清理完成', 'success');
+                return true;
+            } catch (error) {
+                console.error('清理缓存时发生错误:', error);
+                showStatus('部分缓存清理失败: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        // 获取配置
+        function getConfig() {
+            return {
+                email: document.getElementById('config-email').value,
+                companyId: document.getElementById('config-companyId').value,
+                publicKey: document.getElementById('config-publicKey').value,
+                JSEncrypt: window.JSEncrypt
+            };
+        }
+
+        // 初始化 SDK
+        async function initSDK() {
+            // 确保 SDK 已加载
+            if (!sdkLoaded || !window.PatsnapAgentSDK) {
+                showStatus('正在加载 SDK...', 'success');
+                try {
+                    await loadSDK(currentEnvironment);
+                } catch (error) {
+                    showStatus('SDK 加载失败: ' + error.message, 'error');
+                    return false;
+                }
+            }
+
+            const config = getConfig();
+            
+            // 验证配置
+            if (!config.email || !config.companyId || !config.publicKey) {
+                showStatus('请先配置邮箱、公司ID和公钥', 'error');
+                return false;
+            }
+
+            if (config.email === 'user@yourcompany.com' || 
+                config.companyId === 'your-company-id' || 
+                config.publicKey === 'YOUR_PUBLIC_KEY') {
+                showStatus('请将配置替换为真实的值', 'error');
+                return false;
+            }
+
+            try {
+                // 初始化新窗口模式
+                agentNewTab = new window.PatsnapAgentSDK.AgentNewTab(config);
+
+                // 初始化 iframe 模式
+                const iframeConfig = {
+                    ...config,
+                    iframe: document.getElementById('agent-iframe')
+                };
+                agentIframe = new window.PatsnapAgentSDK.AgentIframe(iframeConfig);
+
+                return true;
+            } catch (error) {
+                showStatus('SDK 初始化失败: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        // 显示状态信息
+        function showStatus(message, type = 'success') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = 'status show ' + type;
+            setTimeout(() => {
+                statusEl.className = 'status';
+            }, 3000);
+        }
+
+        // 获取当前模式
+        function getCurrentMode() {
+            return document.querySelector('input[name="mode"]:checked').value;
+        }
+
+        // 打开 Agent (新窗口模式)
+        async function openAgentNewTab(agentName) {
+            // 清理浏览器缓存和Cookie
+            showStatus('正在清理缓存...', 'success');
+            await clearBrowserCache();
+            
+            if (!(await initSDK())) return;
+
+            try {
+                showStatus('正在登录...', 'success');
+                await agentNewTab.login();
+                
+                showStatus('正在打开 Agent...', 'success');
+                
+                // 判断是否支持导出配置 (仅交底书撰写)
+                const config = {};
+                if (agentName === 'PATENT_DISCLOSURE') {
+                    config.exportConfig = {
+                        behavior: window.PatsnapAgentSDK.EXPORT_BEHAVIOR.EVENT_ONLY
+                    };
+                    config.eventListeners = {
+                        exportReport: (eventData) => {
+                            console.log('导出数据:', eventData);
+                            showStatus('导出任务 ID: ' + eventData.taskId, 'success');
+                        }
+                    };
+                }
+
+                await agentNewTab.openAgent(window.PatsnapAgentSDK.AGENT_NAME[agentName], config);
+                showStatus('Agent 打开成功', 'success');
+            } catch (error) {
+                console.error('操作失败:', error);
+                showStatus('操作失败: ' + error.message, 'error');
+            }
+        }
+
+        // 打开 Agent (iframe 模式)
+        async function openAgentIframe(agentName) {
+            // 清理浏览器缓存和Cookie
+            showStatus('正在清理缓存...', 'success');
+            await clearBrowserCache();
+            
+            if (!(await initSDK())) return;
+
+            try {
+                // 显示 iframe 容器
+                const iframeContainer = document.getElementById('iframe-container');
+                iframeContainer.classList.add('active');
+
+                showStatus('正在登录...', 'success');
+                await agentIframe.login();
+                
+                showStatus('正在初始化 Agent...', 'success');
+                
+                // 判断是否支持导出配置 (仅交底书撰写)
+                const config = {};
+                if (agentName === 'PATENT_DISCLOSURE') {
+                    config.exportConfig = {
+                        behavior: window.PatsnapAgentSDK.EXPORT_BEHAVIOR.EVENT_ONLY
+                    };
+                    config.eventListeners = {
+                        exportReport: (eventData) => {
+                            console.log('导出数据:', eventData);
+                            showStatus('导出任务 ID: ' + eventData.taskId, 'success');
+                        }
+                    };
+                }
+
+                await agentIframe.init(window.PatsnapAgentSDK.AGENT_NAME[agentName], config);
+                showStatus('Agent 初始化成功', 'success');
+            } catch (error) {
+                console.error('操作失败:', error);
+                showStatus('操作失败: ' + error.message, 'error');
+                // 隐藏 iframe 容器
+                document.getElementById('iframe-container').classList.remove('active');
+            }
+        }
+
+        // 绑定按钮事件
+        document.querySelectorAll('.agent-btn').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const agentName = e.target.getAttribute('data-agent');
+                const mode = getCurrentMode();
+
+                // 禁用按钮
+                e.target.disabled = true;
+
+                try {
+                    if (mode === 'newtab') {
+                        await openAgentNewTab(agentName);
+                    } else {
+                        await openAgentIframe(agentName);
+                    }
+                } finally {
+                    // 恢复按钮
+                    setTimeout(() => {
+                        e.target.disabled = false;
+                    }, 1000);
+                }
+            });
+        });
+
+        // 监听模式切换
+        document.querySelectorAll('input[name="mode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const iframeContainer = document.getElementById('iframe-container');
+                if (e.target.value === 'iframe') {
+                    // 切换到 iframe 模式时不自动显示，等待用户点击按钮
+                    // iframeContainer.classList.add('active');
+                } else {
+                    // 切换到新窗口模式时隐藏 iframe
+                    iframeContainer.classList.remove('active');
+                }
+            });
+        });
+
+        // 监听环境切换
+        document.getElementById('config-environment').addEventListener('change', async (e) => {
+            const newEnvironment = e.target.value;
+            if (newEnvironment !== currentEnvironment) {
+                showStatus('正在切换环境...', 'success');
+                try {
+                    await loadSDK(newEnvironment);
+                    showStatus(`已切换到${newEnvironment === 'production' ? '线上' : '测试'}环境`, 'success');
+                } catch (error) {
+                    showStatus('环境切换失败: ' + error.message, 'error');
+                    // 切换回原来的环境
+                    e.target.value = currentEnvironment;
+                }
+            }
+        });
+
+        // 页面加载完成时自动加载默认 SDK
+        window.addEventListener('load', async () => {
+            console.log('=== Patsnap Agent SDK 测试页面 ===');
+            console.log('正在加载 SDK...');
+            
+            try {
+                await loadSDK('production');
+                console.log('SDK 加载完成');
+                console.log('请先配置邮箱、公司ID和公钥，然后点击相应的按钮测试不同的 Agent');
+                console.log('提示: iframe 模式请不要在无痕模式下测试');
+                console.log('提示: 每次启动 Agent 时会自动清理浏览器缓存和Cookie');
+                console.log('提示: 可以在配置区域切换线上环境和测试环境');
+            } catch (error) {
+                console.error('SDK 加载失败:', error);
+                showStatus('SDK 加载失败，请刷新页面重试', 'error');
+            }
+        });
+    </script>
 </body>
 </html>
-
